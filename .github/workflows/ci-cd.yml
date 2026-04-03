@@ -1,62 +1,72 @@
 name: CI/CD Pipeline with Self-Hosted Runner
 
+# Когда запускается workflow
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master ]     # при пуше в main/master
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [ main, master ]     # при pull request
+  workflow_dispatch:                # при ручном запуске
 
 jobs:
-  # Job 1: Build
+  # ========== JOB 1: СБОРКА ==========
   build:
-    runs-on: self-hosted
+    runs-on: self-hosted            # используем наш runner на Debian
     
     steps:
+    # 1. Копируем код из репозитория
     - name: Checkout code
-      uses: actions/checkout@v4  # обновлено с v3 на v4
+      uses: actions/checkout@v4     # версия 4 - актуальная
     
+    # 2. Устанавливаем компилятор (если не установлен)
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential g++ make
     
+    # 3. Собираем программу
     - name: Build
       run: |
         make clean
         make
         ls -la fibonacci
     
+    # 4. Сохраняем собранный файл для следующей job
     - name: Upload artifact
-      uses: actions/upload-artifact@v4  # обновлено с v3 на v4
+      uses: actions/upload-artifact@v4   # версия 4
       with:
-        name: fibonacci
-        path: fibonacci
-        if-no-files-found: error  # добавим проверку
+        name: fibonacci                   # имя артефакта
+        path: fibonacci                  # какой файл сохранить
+        if-no-files-found: error         # если файла нет - ошибка
 
-  # Job 2: Test
+  # ========== JOB 2: ТЕСТИРОВАНИЕ ==========
   test:
-    runs-on: self-hosted
-    needs: build
+    runs-on: self-hosted                # используем наш runner
+    needs: build                        # ждем завершения сборки
     
     steps:
+    # 1. Копируем код
     - name: Checkout code
-      uses: actions/checkout@v4  # обновлено с v3 на v4
+      uses: actions/checkout@v4         # версия 4
     
+    # 2. Устанавливаем зависимости
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential g++ make
     
+    # 3. Загружаем собранный файл из предыдущей job
     - name: Download artifact
-      uses: actions/download-artifact@v4  # обновлено с v3 на v4
+      uses: actions/download-artifact@v4  # версия 4
       with:
-        name: fibonacci
-        path: ./
+        name: fibonacci                   # имя артефакта
+        path: ./                         # куда сохранить
     
+    # 4. Делаем файл исполняемым
     - name: Make executable
       run: chmod +x fibonacci
     
+    # 5. Запускаем тесты
     - name: Run tests
       run: make test
-      continue-on-error: false
+      continue-on-error: false           # если тест упал - остановить
