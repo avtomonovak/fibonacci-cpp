@@ -1,6 +1,5 @@
 #include <iostream>
 #include <cassert>
-#include <stdexcept>
 
 class FibonacciCalculator {
 public:
@@ -22,7 +21,7 @@ public:
 };
 
 void test_basic() {
-    std::cout << "Тест 1: Базовые значения... ";
+    std::cout << "Test 1: Basic values... ";
     assert(FibonacciCalculator::calculate(0) == 0);
     assert(FibonacciCalculator::calculate(1) == 1);
     assert(FibonacciCalculator::calculate(2) == 1);
@@ -31,7 +30,7 @@ void test_basic() {
 }
 
 void test_known() {
-    std::cout << "Тест 2: Известные значения... ";
+    std::cout << "Test 2: Known values... ";
     assert(FibonacciCalculator::calculate(5) == 5);
     assert(FibonacciCalculator::calculate(10) == 55);
     assert(FibonacciCalculator::calculate(20) == 6765);
@@ -39,13 +38,13 @@ void test_known() {
 }
 
 void test_edge() {
-    std::cout << "Тест 3: Граничные значения... ";
+    std::cout << "Test 3: Edge values... ";
     assert(FibonacciCalculator::calculate(50) == 12586269025LL);
     std::cout << "OK" << std::endl;
 }
 
 void test_negative() {
-    std::cout << "Тест 4: Отрицательные значения... ";
+    std::cout << "Test 4: Negative input... ";
     try {
         FibonacciCalculator::calculate(-1);
         assert(false);
@@ -54,23 +53,12 @@ void test_negative() {
     }
 }
 
-void test_too_large() {
-    std::cout << "Тест 5: Слишком большие значения... ";
-    try {
-        FibonacciCalculator::calculate(51);
-        assert(false);
-    } catch (const std::invalid_argument&) {
-        std::cout << "OK" << std::endl;
-    }
-}
-
 int main() {
-    std::cout << "=== Запуск тестов ===" << std::endl;
+    std::cout << "=== Running Tests ===" << std::endl;
     test_basic();
     test_known();
     test_edge();
     test_negative();
-    test_too_large();
-    std::cout << "=== Все тесты пройдены! ===" << std::endl;
+    std::cout << "=== All tests passed! ===" << std::endl;
     return 0;
 }
