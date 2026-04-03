@@ -5,16 +5,16 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # позволяет запускать вручную
+  workflow_dispatch:
 
 jobs:
   # Job 1: Build
   build:
-    runs-on: self-hosted  # <-- ЭТО КЛЮЧЕВАЯ СТРОКА!
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4  # обновлено с v3 на v4
     
     - name: Install dependencies
       run: |
@@ -28,24 +28,34 @@ jobs:
         ls -la fibonacci
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # обновлено с v3 на v4
       with:
         name: fibonacci
         path: fibonacci
+        if-no-files-found: error  # добавим проверку
 
   # Job 2: Test
   test:
-    runs-on: self-hosted  # <-- ТОЖЕ САМОСТОЯТЕЛЬНЫЙ RUNNER
+    runs-on: self-hosted
     needs: build
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4  # обновлено с v3 на v4
     
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential g++ make
+    
+    - name: Download artifact
+      uses: actions/download-artifact@v4  # обновлено с v3 на v4
+      with:
+        name: fibonacci
+        path: ./
+    
+    - name: Make executable
+      run: chmod +x fibonacci
     
     - name: Run tests
       run: make test
