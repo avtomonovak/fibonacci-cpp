@@ -71,13 +71,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Install build tools
+    - name: Install packaging tools
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential g++ make dpkg-dev
     
-    - name: Build
-      run: make
+    - name: Build executable
+      run: |
+        make clean
+        make
+        ls -la fibonacci
     
     - name: Create DEB package structure
       run: |
@@ -90,30 +93,27 @@ jobs:
         cp fibonacci debian/usr/local/bin/
         
         # Создаем control файл
-        cat > debian/DEBIAN/control << EOF
+        cat > debian/DEBIAN/control << 'EOF'
         Package: fibonacci
-        Version: 1.0.0-${GITHUB_SHA::8}
+        Version: 1.0.0
         Section: utils
         Priority: optional
         Architecture: amd64
         Maintainer: GitHub Actions <actions@github.com>
         Description: Fibonacci calculator
          Программа для вычисления чисел Фибоначчи
-         Автоматическая сборка в GitHub Actions
-         Коммит: ${GITHUB_SHA::8}
+         Собрано автоматически в GitHub Actions
         Depends: libc6 (>= 2.29)
         EOF
         
-        # Создаем файл документации
-        cat > debian/usr/share/doc/fibonacci/README << EOF
+        # Создаем README
+        cat > debian/usr/share/doc/fibonacci/README << 'EOF'
         Fibonacci Calculator
         
         Программа вычисляет n-е число Фибоначчи.
         Поддерживает n от 0 до 50.
         
-        Собрано автоматически в GitHub Actions.
-        Дата сборки: $(date)
-        Коммит: ${GITHUB_SHA::8}
+        Запустите программу командой: fibonacci
         EOF
         
         # Создаем postinst скрипт (выполняется после установки)
@@ -121,32 +121,23 @@ jobs:
         #!/bin/sh
         set -e
         echo "========================================="
-        echo "  Fibonacci Calculator установлен!"
+        echo "Fibonacci Calculator успешно установлен!"
         echo "========================================="
         echo "Запустите программу командой: fibonacci"
         echo "========================================="
         exit 0
         EOF
         chmod 755 debian/DEBIAN/postinst
-        
-        # Создаем prerm скрипт (выполняется перед удалением)
-        cat > debian/DEBIAN/prerm << 'EOF'
-        #!/bin/sh
-        set -e
-        echo "Fibonacci Calculator удаляется..."
-        exit 0
-        EOF
-        chmod 755 debian/DEBIAN/prerm
     
     - name: Build DEB package
       run: |
-        dpkg-deb --build debian fibonacci_1.0.0-${GITHUB_SHA::8}_amd64.deb
-        echo "DEB package created successfully"
+        dpkg-deb --build debian fibonacci_1.0.0_amd64.deb
+        echo "DEB package created successfully!"
     
     - name: Verify DEB package
       run: |
-        dpkg-deb --info fibonacci_*.deb
-        dpkg-deb --contents fibonacci_*.deb
+        dpkg-deb --info fibonacci_1.0.0_amd64.deb
+        dpkg-deb --contents fibonacci_1.0.0_amd64.deb
     
     - name: Upload DEB package as artifact
       uses: actions/upload-artifact@v4
@@ -154,45 +145,3 @@ jobs:
         name: fibonacci-deb-package
         path: "*.deb"
         if-no-files-found: error
-    
-    - name: Upload DEB package to release (optional)
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-deb
-        path: "*.deb"
-
-  # ========== JOB 4: ПУБЛИКАЦИЯ РЕЛИЗА (опционально) ==========
-  release:
-    runs-on: self-hosted
-    needs: package
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    
-    steps:
-    - name: Download DEB package
-      uses: actions/download-artifact@v4
-      with:
-        name: fibonacci-deb-package
-        path: ./
-    
-    - name: List files
-      run: ls -la *.deb
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v1.0.0-${{ github.run_number }}
-        name: Release v1.0.0-${{ github.run_number }}
-        body: |
-          ## Fibonacci Calculator Release
-          
-          ### Что нового:
-          - Автоматическая сборка через GitHub Actions
-          - Включены тесты
-          - Упаковано в DEB пакет
-          
-          ### Установка:
-          ```bash
-          sudo dpkg -i fibonacci_*.deb
-          files: "*.deb"
-          env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
